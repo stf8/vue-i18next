@@ -7,8 +7,10 @@ function equalLanguage(el, vnode) {
   return el._i18nLanguage === vm.$i18n.i18next.language;
 }
 
-function equalValue(value, oldValue) {
-  if (value === oldValue) {
+function equalValue(value, oldValue, el) {
+  if (!value) {
+    return el.innerHTML === el.dataset.origHTML;
+  } else if (value === oldValue) {
     return true;
   }
   if (value && oldValue) {
@@ -31,12 +33,17 @@ function assert(vnode) {
   return true;
 }
 
-function parseValue(value) {
+function parseValue(value, el) {
   let path;
   let language;
   let args;
 
-  if (typeof value === 'string') {
+  if (!value) {
+    if (!el.dataset.origHTML) {
+      el.dataset.origHTML = el.innerHTML;
+    }
+    path = el.dataset.origHTML;
+  } else if (typeof value === 'string') {
     path = value;
   } else if (toString.call(value) === '[object Object]') {
     ({ path, language, args } = value);
@@ -48,7 +55,7 @@ function parseValue(value) {
 function t(el, binding, vnode) {
   const { value } = binding;
 
-  const { path, language, args } = parseValue(value);
+  const { path, language, args } = parseValue(value, el);
   if (!path && !language && !args) {
     warn('v-t: invalid value');
     return;
@@ -82,7 +89,7 @@ export function bind(el, binding, vnode) {
 }
 
 export function update(el, binding, vnode, oldVNode) {
-  if (equalLanguage(el, vnode) && equalValue(binding.value, binding.oldValue)) {
+  if (equalLanguage(el, vnode) && equalValue(binding.value, binding.oldValue, el)) {
     return;
   }
 
